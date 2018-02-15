@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script type="text/javascript" src="js/jquery-1.2.6.js"></script>
+<script type="text/javascript" src="js/jquery.jslider.js"></script>
+<style>
+
+svg {
+  font: 10px sans-serif;
+}
+.chord path {
+  		fill-opacity: 0.67;
+  		stroke: #000;
+  		stroke-width: 0.5px;
+	}
+.background path {
+  fill: none;
+  stroke: #ddd;
+  shape-rendering: crispEdges;
+}
+
+.foreground path {
+  fill: none;
+  stroke: #2166ac;
+}
+
+.brush .extent {
+  fill-opacity: .3;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+}
+
+.axis line,
+.axis path {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+.rectFill{
+	fill: white;
+	stroke: black;
+}
+
+
+/*body { font: 12px Arial;}*/
+body{
+    -webkit-user-select:none;
+    -moz-user-select:none;
+    -ms-user-select:none;
+    user-select:none;
+    font: 14px Arial;
+}
+
+.axis text {
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+  cursor: move;
+}
+.node_text {
+  font-size: 10px;
+  text-anchor: middle;
+}
+.links line {
+  stroke: #999;
+  stroke-opacity: 0.6;
+}
+
+.nodes circle {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+#circle circle {
+  fill: none;
+  pointer-events: all;
+}
+
+
+#circle:hover path.fade {
+  display: none;
+}
+.defaultbar {
+                margin-top: 10px;
+                height: 5px;
+                background-color: #FFFFE0;
+                border: 1px solid #A9C9E2;
+                position: relative;
+            } .defaultbar .jquery-completed {
+                height: 3px;
+                background-color: #7d9edb;
+                top: 1px;
+                left: 1px;
+                position: absolute;
+            } .defaultbar .jquery-jslider {
+                height: 15px;
+                background-color: #E6E6FA;
+                border: 1px solid #A5B6C8;
+                top: -6px;
+                display: block;
+                cursor: pointer;
+                position: absolute;
+            } .defaultbar .jquery-jslider-hover {
+                background-color: #000080;
+            }
+            fieldset {
+                border: solid 1px #dedede;
+                padding: 0 10px;
+            }
+            fieldset legend {
+                background-color: #FFF5FA;
+                border: 1px solid #F8B3D0;
+                padding: 5px 10px;
+            }
+            #thediv{
+  width:200px;
+  height:100%;
+  background:#333333;
+  position:absolute;
+  left:-200px;
+}
+span{
+  width:20px;
+  height:100px;
+  line-height:33px;
+  background:#0e90d2;
+  position:absolute;
+  right:-20px;
+  top:70px;
+}
+.abc{
+  color:#FFFFFF;
+  font-family:"Segoe UI","Lucida Grande",Helvetica Arial,"Microsoft YaHei",
+        FreeSans,Arimo,"Droid Sans","wenquanyi micro hei","Hiragino Sans GB",
+        "Hiragino Sans GB W3",FontAwesome,sans-serif;
+  vertical-align: middle;
+}
+.background {
+  fill: #eee;
+}
+
+line {
+  stroke: #fff;
+}
+.line-mds {
+  stroke: #000000;
+  stroke-width: 1.5px;
+}
+text.active {
+  fill: red;
+}
+.divPosition{
+  position:absolute;
+  top: 5px;
+  left: 12px;
+}
+</style>
+
+<body>
+<div id="kongjian" class="divPosition">
+    <p>ordering：</p>
+    <form name="selectform" action="" method="" >
+  	  <p><label><input type="radio" name="mode" value="name" checked>random</label></p>
+      <p><label><input type="radio" name="mode" value="correlation">correlation</label></p>
+      <p><label><input type="radio" name="mode" value="Cluster">cluster-aware</label></p>
+    </form>
+	</form>
+	<p>Th-AQI：</p>
+      <div id="slidercontainer1">
+      </div>
+
+  <p>Th-PM25：</p>
+      <div id="slidercontainer2">
+      </div>
+  <p>Th-PM10：</p>
+      <div id="slidercontainer3">
+      </div>
+  <p>Th-SO2：</p>
+      <div id="slidercontainer4">
+      </div>
+  <p>Th-NO2：</p>
+      <div id="slidercontainer5">
+      </div>
+  <p>Th-O3：</p>
+      <div id="slidercontainer6">
+      </div>
+  <p>Th-CO：</p>
+      <div id="slidercontainer7">
+      </div>
+</div>
+
+<script src="js/d3.v3.min.js" charset="utf-8"></script>
+<script src="js/queue.v1.min.js"></script>
+<script src="js/numeric.min.js"></script>
+
+<script src="js/Node.js"></script>
+<script src="js/Correlation-Cluster.js"></script>
+<script src="js/mds.js"></script>
+<script src="js/partition.js"></script>
+<script>
+
+
+/*var dime=["year","0-60 mph (s)","weight (lb)","power (hp)","displacement (cc)","cylinders","economy (mpg)"];*/
+//var dime=["economy (mpg)","cylinders","displacement (cc)","power (hp)","weight (lb)","0-60 mph (s)","year"];
+var dime1=["power (hp)","cylinders","displacement (cc)","economy (mpg)","weight (lb)","year","0-60 mph (s)"];
+var dime=["AQI","PM25","PM10","SO2","NO2","O3","CO"];
+
+var CooccurrenceColor=[[49,54,149],[69,117,180],[116,173,209],[171,217,233],[224,243,248],
+[254,224,144],[253,174,97],[244,109,67],[215,48,39],[165,0,38]];
+
+var partitionColor=[[0,60,48],[1,102,94],[53,151,143],[128,205,193],[199,234,229],[246,232,195],[223,194,125],[191,129,45],[140,81,10],[84,48,5]];
+
+
+
+
+
+var partitionColor1=[[45,0,75],[84,39,136],[128,115,172],[178,171,210],[216,218,235],[237,248,233],[186,228,179],[116,196,118],[49,163,84],[0,109,44]];
+var dimension=[];
+var mean=[],sum,NAN;
+var standard=[];
+
+var flag=new Array();
+var vis=new Array();
+var v=new Array();
+var ans=100000;
+
+var dataLoad=[];
+
+var treeData=[];
+var percent1=0;
+var percent2=0;
+var percent3=0;
+var percent4=0;
+var percent5=0;
+var percent6=0;
+var percent7=0;
+var arr=new Array();
+  for(var i=0;i<7;i++){
+    arr[i]=new Array(7);
+  }
+  var arrMDS_cluster=new Array();
+  for(var i=0;i<7;i++){
+    arrMDS_cluster[i]=new Array(7);
+  }
+  var arrMDS_relation=new Array();
+  for(var i=0;i<7;i++){
+    arrMDS_relation[i]=new Array(7);
+  }
+var select_type="name";
+var margin = {top: 30, right: 40, bottom: 30, left: 495},
+    width = 1350 - margin.left - margin.right,
+    height = 350 - margin.top - margin.bottom;
+
+var x = d3.scale.ordinal().rangePoints([0, width], 1),
+    y = {},
+    dragging = {};
+
+var line = d3.svg.line(),
+    axis = d3.svg.axis().orient("left"),
+    background,
+    foreground;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", 1400)
+    .attr("height", 800);
+
+var rect = svg.append("rect")
+        .attr("x", 490)
+        .attr("y",5)
+        .attr("width",850)
+        .attr("height",335)
+        .attr("class","rectFill")
+        .attr("rx",10)
+        .attr("ry",10);
+
+var rect = svg.append("rect")
+        .attr("x", 490)
+        .attr("y",350)
+        .attr("width",850)
+        .attr("height",280)
+        .attr("class","rectFill")
+        .attr("rx",10)
+        .attr("ry",10);
+
+var rect = svg.append("rect")
+        .attr("x", 150)
+        .attr("y",5)
+        .attr("width",330)
+        .attr("height",335)
+        .attr("class","rectFill")
+        .attr("rx",10)
+        .attr("ry",10);
+
+var rect = svg.append("rect")
+        .attr("x", 150)
+        .attr("y",350)
+        .attr("width",330)
+        .attr("height",280)
+        .attr("class","rectFill")
+        .attr("rx",10)
+        .attr("ry",10);
+var rect = svg.append("rect")
+        .attr("x", 1)
+        .attr("y",5)
+        .attr("width",140)
+        .attr("height",625)
+        .attr("class","rectFill")
+        .attr("rx",10)
+        .attr("ry",10);
+///白色到红色
+var b1 = d3.rgb(255,255,255);  //白色
+var a1 = d3.rgb(202,0,32);//红色
+var c1= d3.rgb(5,113,176); //蓝色
+var Scale_CO1=d3.interpolate(c1,b1);
+var Scale_CO2=d3.interpolate(b1,a1);
+var ScaleCO1 = d3.scale.linear().
+                          domain([0,0.5])
+                          .range([1,0]);
+var ScaleCO2 = d3.scale.linear().
+                          domain([0.5,1])
+                          .range([0,1]);
+///白色到红色
+var b2 = d3.rgb(253,141,60);  //白色
+var a2 =d3.rgb(255,255,178); //橘色
+var c2= d3.rgb(189,0,38); //紫色
+
+///白色到红色
+var b3 = d3.rgb(247,104,161);  //白色
+var a3 =d3.rgb(254,235,226); //粉色
+var c3= d3.rgb(122,1,119); //绿色
+
+
+
+
+var g1=svg.append("g")
+          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var x1 = d3.scale.ordinal().rangeBands([0, 200]),
+    z = d3.scale.linear().domain([0, 4]).clamp(true),
+    c = d3.scale.category10().domain(d3.range(10));
+
+/*var colorA=d3.rgb(255,0,255);
+var colorB=d3.rgb(0,255,255);
+var Scale_red=d3.interpolate(colorA,colorB);*/
+
+
+var g3=svg.append("g")
+          .attr("transform", "translate(" + 250 + "," + 380 + ")");
+
+var color = d3.scale.category20();
+
+var partition = d3.layout.partition()
+        .sort(null)
+        .size([110,200])
+        .value(function(d) { return 1; });
+
+queue()
+	  .defer(d3.csv, "cars.csv")
+    .defer(d3.json, "json/power.json")
+    .defer(d3.json, "json/mph.json")
+    .defer(d3.json, "json/displace.json")
+    .defer(d3.json, "json/year.json")
+    .defer(d3.json, "json/cylinders.json")
+    .defer(d3.json, "json/economy.json")
+    .defer(d3.json, "json/weight.json")
+    .defer(d3.json, "json/miserables.json")
+    .await(readDate);
+
+
+function readDate(error,cars ,power, mph,displace,year,cylinders,economy,weight,miserables) {
+  dataLoad[0]=economy;
+  dataLoad[1]=cylinders;
+  dataLoad[2]=displace;
+  dataLoad[3]=power;
+  dataLoad[4]=weight;
+  dataLoad[5]=mph;
+  dataLoad[6]=year;
+  //定义颜色
+  function colorbar(){
+    //定义一个线性渐变
+var defs = svg.append("defs");
+
+var linearGradient3 = defs.append("linearGradient")
+            .attr("id","linearColor3")
+            .attr("x1","0%")
+            .attr("y1","0%")
+            .attr("x2","100%")
+            .attr("y2","0%");
+
+var stop13 = linearGradient3.append("stop")
+        .attr("offset","0%")
+        .style("stop-color",a2.toString());
+
+var stop23 = linearGradient3.append("stop")
+        .attr("offset","100%")
+        .style("stop-color",b2.toString());
+
+//添加一个矩形，并应用线性渐变
+var colorRect = svg.append("rect")
+        .attr("x", 630)
+        .attr("y", 590)
+        .attr("width", 100)
+        .attr("height", 20)
+        .style("fill","url(#" + linearGradient3.attr("id") + ")");
+
+var linearGradient4 = defs.append("linearGradient")
+            .attr("id","linearColor4")
+            .attr("x1","0%")
+            .attr("y1","0%")
+            .attr("x2","100%")
+            .attr("y2","0%");
+var stop14 = linearGradient4.append("stop")
+        .attr("offset","0%")
+        .style("stop-color",b2.toString());
+
+var stop24 = linearGradient4.append("stop")
+        .attr("offset","100%")
+        .style("stop-color",c2.toString());
+
+//添加一个矩形，并应用线性渐变
+var colorRect = svg.append("rect")
+        .attr("x", 730)
+        .attr("y", 590)
+        .attr("width", 100)
+        .attr("height", 20)
+        .style("fill","url(#" + linearGradient4.attr("id") + ")");
+
+svg.append("text")
+     .attr("x", 760)
+      .attr("y", 620)
+      .attr("dy", ".32em")
+      .attr("text-anchor", "end")
+      .style("font-size", "14px")  
+      .text("partition");
+
+
+
+
+var linearGradient5 = defs.append("linearGradient")
+            .attr("id","linearColor5")
+            .attr("x1","0%")
+            .attr("y1","0%")
+            .attr("x2","100%")
+            .attr("y2","0%");
+
+var stop15 = linearGradient5.append("stop")
+        .attr("offset","0%")
+        .style("stop-color",a3.toString());
+
+var stop25 = linearGradient5.append("stop")
+        .attr("offset","100%")
+        .style("stop-color",b3.toString());
+
+//添加一个矩形，并应用线性渐变
+var colorRect = svg.append("rect")
+        .attr("x", 980)
+        .attr("y", 590)
+        .attr("width", 100)
+        .attr("height", 20)
+        .style("fill","url(#" + linearGradient5.attr("id") + ")");
+
+var linearGradient6 = defs.append("linearGradient")
+            .attr("id","linearColor6")
+            .attr("x1","0%")
+            .attr("y1","0%")
+            .attr("x2","100%")
+            .attr("y2","0%");
+var stop16 = linearGradient6.append("stop")
+        .attr("offset","0%")
+        .style("stop-color",b3.toString());
+
+var stop26 = linearGradient6.append("stop")
+        .attr("offset","100%")
+        .style("stop-color",c3.toString());
+
+//添加一个矩形，并应用线性渐变
+var colorRect = svg.append("rect")
+        .attr("x", 1080)
+        .attr("y", 590)
+        .attr("width", 100)
+        .attr("height", 20)
+        .style("fill","url(#" + linearGradient6.attr("id") + ")");
+svg.append("text")
+      .attr("x", 1115)
+      .attr("y", 620)
+      .attr("dy", ".32em")
+      .attr("text-anchor", "end")
+      .style("font-size", "14px")  
+      .text("relation");
+
+
+  }
+  colorbar();
+
+
+  var flag=0;
+    if(flag==0){
+     $().ready(function(){
+                $.fn.jSlider({
+                    renderTo: '#slidercontainer1',
+                    size: {
+                        barWidth: 130,
+                        sliderWidth: 5
+                    },
+                    onChanging: function(percentage, e){
+                       percent1=percentage;
+                       changeSlider();
+                    }
+                });
+                $.fn.jSlider({
+                    renderTo: '#slidercontainer2',
+                    size: {
+                        barWidth: 130,
+                        sliderWidth: 5
+                    },
+                    onChanging: function(percentage, e){
+                       percent2=percentage;
+                       changeSlider();
+                    }
+                });
+                $.fn.jSlider({
+                    renderTo: '#slidercontainer3',
+                    size: {
+                        barWidth: 130,
+                        sliderWidth: 5
+                    },
+                    onChanging: function(percentage, e){
+                       percent3=percentage;
+                       changeSlider();
+                    }
+                });
+                $.fn.jSlider({
+                    renderTo: '#slidercontainer4',
+                    size: {
+                        barWidth: 130,
+                        sliderWidth: 5
+                    },
+                    onChanging: function(percentage, e){
+                       percent4=percentage;
+                       changeSlider();
+                    }
+                });
+                $.fn.jSlider({
+                    renderTo: '#slidercontainer5',
+                    size: {
+                        barWidth: 130,
+                        sliderWidth: 5
+                    },
+                    onChanging: function(percentage, e){
+                       percent5=percentage;
+                       changeSlider();
+                    }
+                });
+                $.fn.jSlider({
+                    renderTo: '#slidercontainer6',
+                    size: {
+                        barWidth: 130,
+                        sliderWidth: 5
+                    },
+                    onChanging: function(percentage, e){
+                       percent6=percentage;
+                       changeSlider();
+                    }
+                });
+                $.fn.jSlider({
+                    renderTo: '#slidercontainer7',
+                    size: {
+                        barWidth: 130,
+                        sliderWidth: 5
+                    },
+                    onChanging: function(percentage, e){
+                       percent7=percentage;
+                       changeSlider();
+                    }
+                });
+            });
+     
+     function changeSlider(){
+        //var select=Type();
+                  if(select_type=="Cluster"){
+                    d3.selectAll(".background").remove();
+                    d3.selectAll(".foreground").remove();
+                      d3.selectAll(".dimension").remove();
+                      d3.selectAll(".column").remove();
+                      d3.selectAll(".row").remove();
+
+                    var order_cluster=orderByCluster();
+                    CoOccurrence(arrMDS_cluster,order_cluster);
+            }
+            if(select_type=="correlation"){
+              var labels=new Array(7);
+                for(var i=0;i<7;i++)
+                {
+                    labels[i]=''+i+'';
+                }
+                console.log(arr);
+                var positions = numeric.transpose(mds.classic(arr));
+
+                var w = Math.min(700, document.documentElement.clientWidth - 20),
+                    h = w /2;
+
+                mds.drawD3ScatterPlot(d3.select("svg"),
+                    positions[0],
+                    positions[1],
+                    labels,
+                    {
+                        w :  Math.min(700, document.documentElement.clientWidth - 20),
+                        h : w /2,
+                        padding : 37,
+                        reverseX : true,
+                        reverseY : true,
+                    }
+                );
+            }
+            partionDraw();
+     }
+     
+     flag=1;
+    }
+
+
+  function partionDraw(){
+    
+                for(var i=0;i<dimension.length;i++){
+                  if(dimension[i]=="CO"){
+                      treeData[i]=year;
+                  }
+                  if(dimension[i]=="O3"){
+                       treeData[i]=mph;
+                   }
+                  if(dimension[i]=="NO2"){
+                      treeData[i]=weight;
+                  }
+                  if(dimension[i]=="SO2"){
+                      treeData[i]=power;
+                  }
+                  if(dimension[i]=="PM10"){
+                      treeData[i]=displace;
+                  }
+                  if(dimension[i]=="PM25"){
+                      treeData[i]=cylinders;
+                  }
+                  if(dimension[i]=="AQI"){
+                      treeData[i]=economy;
+                  }
+                 }
+                var startx=505;
+                for(var i=0;i<dimension.length;i++){
+                  if(dimension[i]=="CO"){
+                      drawPartition(year,cars,startx,i,percent7,x,treeData);
+                  }
+                  if(dimension[i]=="O3"){
+                       drawPartition(mph,cars,startx,i,percent6,x,treeData);
+                   }
+                  if(dimension[i]=="NO2"){
+                      drawPartition(weight,cars,startx,i,percent5,x,treeData);
+                  }
+                  if(dimension[i]=="SO2"){
+                      drawPartition(power,cars,startx,i,percent4,x,treeData);
+                  }
+                  if(dimension[i]=="PM10"){
+                      drawPartition(displace,cars,startx,i,percent3,x,treeData);
+                  }
+                  if(dimension[i]=="PM25"){
+                      drawPartition(cylinders,cars,startx,i,percent2,x,treeData);
+                  }
+                  if(dimension[i]=="AQI"){
+                      drawPartition(economy,cars,startx,i,percent1,x,treeData);
+                  }
+                  startx=startx+118;
+                 }
+  }
+
+	function CoOccurrence(matrixData,x_domain){
+	var matrix = [],
+      nodes = miserables.nodes,
+      n = nodes.length;
+
+  // Compute index per node.
+  nodes.forEach(function(node, i) {
+    node.index = i;
+    node.count = 0;
+    matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: 0}; });
+  });
+
+  // Convert links to matrix; count character occurrences.
+  miserables.links.forEach(function(link) {
+    nodes[link.source].count += link.value;
+    nodes[link.target].count += link.value;
+  });
+  var max=-1,min=1000000;
+  for(var i=0;i<7;i++){
+  	for(var j=0;j<7;j++){
+  		if(matrixData[i][j]>max)
+  			max=matrixData[i][j];
+  		if(matrixData[i][j]<min)
+  			min=matrixData[i][j];
+  		//matrix[i][j].z = arrMDS_cluster[i][j];
+  	}
+  }
+  for(var i=0;i<7;i++){
+  	for(var j=0;j<7;j++){
+  		matrix[i][j].z = (matrixData[i][j]-min)/(max-min);
+  	}
+  }
+
+  // Precompute the orders.
+  // The default sort order.
+  x1.domain(x_domain);
+
+//定义一个线性渐变
+var defs = svg.append("defs");
+
+var linearGradient = defs.append("linearGradient")
+            .attr("id","linearColor")
+            .attr("x1","0%")
+            .attr("y1","0%")
+            .attr("x2","0%")
+            .attr("y2","100%");
+
+var stop1 = linearGradient.append("stop")
+        .attr("offset","0%")
+        .style("stop-color",a1.toString());
+
+var stop2 = linearGradient.append("stop")
+        .attr("offset","100%")
+        .style("stop-color",b1.toString());
+
+//添加一个矩形，并应用线性渐变
+var colorRect = svg.append("rect")
+        .attr("x", 180)
+        .attr("y", 380)
+        .attr("width", 20)
+        .attr("height", 100)
+        .style("fill","url(#" + linearGradient.attr("id") + ")");
+
+var linearGradient1 = defs.append("linearGradient")
+            .attr("id","linearColor1")
+            .attr("x1","0%")
+            .attr("y1","0%")
+            .attr("x2","0%")
+            .attr("y2","100%");
+var stop11 = linearGradient1.append("stop")
+        .attr("offset","0%")
+        .style("stop-color",b1.toString());
+
+var stop21 = linearGradient1.append("stop")
+        .attr("offset","100%")
+        .style("stop-color",c1.toString());
+
+//添加一个矩形，并应用线性渐变
+var colorRect = svg.append("rect")
+        .attr("x", 180)
+        .attr("y", 480)
+        .attr("width", 20)
+        .attr("height", 100)
+        .style("fill","url(#" + linearGradient1.attr("id") + ")");
+d3.selectAll("#colortext").remove();
+var colortext = svg.append("text")
+.attr("id","colortext")
+        /*.attr("x", 160)
+        .attr("y", 600)*/
+        .style("font-size", "13px")
+        .attr("transform", function(d, i) { return "translate(170," + 520 + ")rotate(-90)"; })  
+        .text("correlation");
+
+
+  g3.append("rect")
+      .attr("class", "background")
+      .attr("width", 200)
+      .attr("height", 200);
+
+  var row = g3.selectAll(".row")
+      .data(matrix)
+      .enter().append("g")
+      .attr("class", "row")
+      .attr("transform", function(d, i) { return "translate(0," + x1(i) + ")"; })
+      .each(row);
+
+  row.append("line")
+      .attr("x2", 200);
+
+  row.append("text")
+      .attr("x", -6)
+      .attr("y", x1.rangeBand() / 2)
+      .attr("dy", ".32em")
+      .attr("text-anchor", "end")
+      .text(function(d, i) { return nodes[i].name; });
+
+  var column = g3.selectAll(".column")
+      .data(matrix)
+      .enter().append("g")
+      .attr("class", "column")
+      .attr("transform", function(d, i) { return "translate(" + x1(i) + ")rotate(-90)"; });
+
+  column.append("line")
+      .attr("x1", -200);
+
+  column.append("text")
+      .attr("x", 6)
+      .attr("y", x1.rangeBand() / 2)
+      .attr("dy", ".32em")
+      .attr("text-anchor", "start")
+      
+      //.attr("transform", "translate(" + -230 + "," + 0 + ")")
+      .attr("transform", function(d, i) { return "translate(" + -200 + ")rotate(90)"; })
+      .text(function(d, i) { return nodes[i].name; });
+
+  function row(row) {
+    var cell = d3.select(this).selectAll(".cell")
+        .data(row.filter(function(d) { return d.z; }))
+      .enter().append("rect")
+        .attr("class", "cell")
+        .attr("x", function(d) { return x1(d.x); })
+        .attr("width", x1.rangeBand())
+        .attr("height", x1.rangeBand())
+        //.style("fill-opacity", function(d) { return z(d.z); })
+        .style("fill", function(d,i) {
+          if(d.z>=0.5){
+            return Scale_CO1(ScaleCO2(d.z));
+          }
+          else{
+            return Scale_CO2(ScaleCO1(d.z));
+          }
+        })
+        .on("mouseover", mouseover)
+        .on("mouseout", mouseout);
+  }
+
+  function mouseover(p) {
+    d3.selectAll(".row text").classed("active", function(d, i) { console.log("y:"+p.y);return i == p.y; });
+    d3.selectAll(".column text").classed("active", function(d, i) { console.log("x:"+p.x);return i == p.x; });
+  }
+
+  function mouseout() {
+    d3.selectAll("text").classed("active", false);
+  }
+
+  
+	}
+  function sliderposition(){
+    $(function(){
+          $("div.jquery-jslider").each(function(){
+            $(this).css("left","0px");
+          });
+        });
+      $(function(){
+          $("div.jquery-completed").each(function(){
+            $(this).css("left","0px");
+            $(this).css("width","0px");
+          });
+        });
+  }
+  sliderposition();
+  function orderByRandom(){
+      // Extract the list of dimensions and create a scale for each.
+      x.domain(dimensions = d3.keys(cars[0]).filter(function(d) {
+      return d != "name" && (y[d] = d3.scale.linear()
+        .domain(d3.extent(cars, function(p) { return +p[d]; }))
+        .range([height, 0]));
+      }));
+      
+
+						var node=[];
+			              for(var i=0;i<dime.length;i++){
+			              	if(dime[i]=="CO")
+			              		node[i]=getNode(year,percent7);
+			              	if(dime[i]=="O3")
+			              		node[i]=getNode(mph,percent6);
+			              	if(dime[i]=="NO2")
+			              		node[i]=getNode(weight,percent5);
+			              	if(dime[i]=="SO2")
+			              		node[i]=getNode(power,percent4);
+			              	if(dime[i]=="PM10")
+			              		node[i]=getNode(displace,percent3);
+			              	if(dime[i]=="PM25")
+			              		node[i]=getNode(cylinders,percent2);
+			              	if(dime[i]=="AQI")
+			              		node[i]=getNode(economy,percent1);
+			              }
+			              console.log(node);
+			              var clusterArr=getClusterCorrelation(cars,node);
+			              console.log(clusterArr);
+			              var labels=new Array(7);
+						    /*for(var i=0;i<7;i++)
+						    {
+						        labels[i]=''+i+'';
+						    }*/
+                labels=dime;
+			          var positions = numeric.transpose(mds.classic(clusterArr))
+						
+						var xDomain = [Math.min.apply(null, positions[0]),
+                       					Math.max.apply(null, positions[0])],
+            			 yDomain = [Math.max.apply(null, positions[1]),
+                       					Math.min.apply(null, positions[1])];
+                       		var xScale = d3.scale.linear().
+					                domain(xDomain)
+					                .range([32, 370 - 32]),
+					            yScale = d3.scale.linear().
+					                domain(yDomain)
+					                .range([32, 330-32]);
+
+			              	for(var i=0;i<7;i++){
+			              		for(var j=0;j<7;j++){
+			              			if(i==j)
+			              				arrMDS_cluster[i][j]=0;
+			              			else
+			              				arrMDS_cluster[i][j]=Math.sqrt(Math.pow(xScale(positions[0][i])-xScale(positions[0][j]),2)+Math.pow(yScale(positions[1][i])-yScale(positions[1][j]),2));
+			              		}
+			              	}
+			              	
+			              	//var val=getMDSPath(arrMDS_cluster);
+                      var val=[0,1,2,3,4,5,6];
+                      //sliderposition(val);
+			              	/*for(var i=0;i<7;i++)
+			              		dimensions[i]=dime[val[i]];*/
+			              	console.log(val);
+			              	//x.domain(dimensions);
+			       
+						    var w = Math.min(700, document.documentElement.clientWidth - 20),
+						        h = w /2;
+
+						    mds.drawD3ScatterPlot(d3.select("svg"),
+						        positions[0],
+						        positions[1],
+						        labels,
+						        {
+						            w :  Math.min(700, document.documentElement.clientWidth - 20),
+						            h : w /2,
+						            padding : 37,
+						            reverseX : true,
+						            reverseY : true,
+						        },
+                    cars,
+                    val,
+                    dataLoad,
+                    miserables
+						    );
+
+
+      dimension=dimensions;
+      partionDraw();
+      background = g1.append("g")
+        .attr("class", "background")
+      .selectAll("path")
+        .data(cars)
+      .enter().append("path")
+        .attr("d", path);
+
+      // Add blue foreground lines for focus.
+      foreground = g1.append("g")
+        .attr("class", "foreground")
+      .selectAll("path")
+        .data(cars)
+      .enter().append("path")
+        .attr("d", path);
+      // Add a group element for each dimension.
+      var g = g1.selectAll(".dimension")
+        .data(dimensions)
+        .enter().append("g")
+        .attr("class", "dimension")
+        .attr("stroke-width",2)
+        .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+        .call(d3.behavior.drag()
+        .origin(function(d) { return {x: x(d)}; })
+        .on("dragstart", function(d) {
+        	console.log(d);
+          dragging[d] = x(d);
+          background.attr("visibility", "hidden");
+        })
+        .on("drag", function(d) {
+          dragging[d] = Math.min(width, Math.max(0, d3.event.x));
+          foreground.attr("d", path);
+          dimensions.sort(function(a, b) { return position(a) - position(b); });
+          console.log(dimensions);
+          x.domain(dimensions);
+          dimension=dimensions;
+          partionDraw();
+          g.attr("transform", function(d) { return "translate(" + position(d) + ")"; })
+        })
+        .on("dragend", function(d) {
+          delete dragging[d];
+          transition(d3.select(this)).attr("transform", "translate(" + x(d) + ")");
+          transition(foreground).attr("d", path);
+          background
+            .attr("d", path)
+          .transition()
+            .delay(500)
+            .duration(0)
+            .attr("visibility", null);
+        }));
+
+      // Add an axis and title.
+      g.append("g")
+        .attr("class", "axis")
+        .each(function(d) { d3.select(this).call(axis.scale(y[d]).tickValues(y[d].domain()).orient("right")); })
+      	.append("text")
+        .style("text-anchor", "middle")
+        .attr("y", -9)
+        .style("font-size", "13px")
+        .text(function(d,i) { return d; });
+	
+	     g.selectAll("tick").remove();
+
+      // Add and store a brush for each axis.
+      g.append("g")
+        .attr("class", "brush")
+        .each(function(d) {
+        d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brushstart", brushstart).on("brush", brush));
+        })
+      .selectAll("rect")
+        .attr("x", -8)
+        .attr("width", 16);
+
+        return val;
+    } 
+  //按第二种方式排序
+  function orderByCorrection(){
+    // Extract the list of dimensions and create a scale for each.
+      x.domain(dimensions = d3.keys(cars[0]).filter(function(d) {
+      return d != "name" && (y[d] = d3.scale.linear()
+        .domain(d3.extent(cars, function(p) { return +p[d]; }))
+        .range([height, 0]));
+      }));
+      //dimensions=caculate();
+      //x.domain(dimensions);
+      caculate(cars);
+	   var labels=new Array(7);
+			    /*for(var i=0;i<7;i++)
+			    {
+			        labels[i]=''+i+'';
+			    }*/
+          labels=dime;
+			    console.log(arr);
+          for(var i=0;i<7;i++){
+                        for(var j=0;j<7;j++){
+                            arr[i][j]=Math.abs(arr[i][j]);
+                        }
+                      }
+              var positions = numeric.transpose(mds.classic(arr));
+
+              var xDomain = [Math.min.apply(null, positions[0]),
+                       					Math.max.apply(null, positions[0])],
+            			 yDomain = [Math.max.apply(null, positions[1]),
+                       					Math.min.apply(null, positions[1])];
+                       		var xScale = d3.scale.linear().
+					                domain(xDomain)
+					                .range([32, 370 - 32]),
+					            yScale = d3.scale.linear().
+					                domain(yDomain)
+					                .range([32, 330-32]);
+
+			              	for(var i=0;i<7;i++){
+			              		for(var j=0;j<7;j++){
+			              			if(i==j)
+			              				arrMDS_relation[i][j]=0;
+			              			else
+			              				arrMDS_relation[i][j]=Math.sqrt(Math.pow(xScale(positions[0][i])-xScale(positions[0][j]),2)+Math.pow(yScale(positions[1][i])-yScale(positions[1][j]),2));
+			              		}
+			              	}
+			              	
+			              	var val=getMDSPath(arrMDS_relation);
+                      //sliderposition(val);
+			              	for(var i=0;i<7;i++)
+			              		dimensions[i]=dime[val[i]];
+			              	console.log(val);
+			              	x.domain(dimensions);
+			       
+
+			    var w = Math.min(700, document.documentElement.clientWidth - 20),
+			        h = w /2;
+
+			    mds.drawD3ScatterPlot(d3.select("svg"),
+			        positions[0],
+			        positions[1],
+			        labels,
+			        {
+			            w :  Math.min(700, document.documentElement.clientWidth - 20),
+			            h : w /2,
+			            padding : 37,
+			            reverseX : true,
+			            reverseY : true,
+			        },
+              cars,
+              val,
+              dataLoad,
+              miserables
+			    );
+              /*x1.domain(val);
+
+			    var t = svg.transition().duration(2500);
+
+			    t.selectAll(".row")
+			        .delay(function(d, i) { return x1(i) * 4; })
+			        .attr("transform", function(d, i) { return "translate(0," + x1(i) + ")"; })
+			      .selectAll(".cell")
+			        .delay(function(d) { return x1(d.x) * 4; })
+			        .attr("x", function(d) { return x1(d.x); });
+
+			    t.selectAll(".column")
+			        .delay(function(d, i) { return x1(i) * 4; })
+			        .attr("transform", function(d, i) { return "translate(" + x1(i) + ")rotate(-90)"; });*/
+      dimension=dimensions;
+      // Add grey background lines for context.
+      console.log(dimensions);
+      background = g1.append("g")
+        .attr("class", "background")
+      .selectAll("path")
+        .data(cars)
+      .enter().append("path")
+        .attr("d", path);
+
+      // Add blue foreground lines for focus.
+      foreground = g1.append("g")
+        .attr("class", "foreground")
+      .selectAll("path")
+        .data(cars)
+      .enter().append("path")
+        .attr("d", path);
+    
+      // Add a group element for each dimension.
+      var g = g1.selectAll(".dimension")
+        .data(dimensions)
+      .enter().append("g")
+        .attr("class", "dimension")
+        .attr("stroke-width",2)
+        .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+        .call(d3.behavior.drag()
+        .origin(function(d) { return {x: x(d)}; })
+        .on("dragstart", function(d) {
+          dragging[d] = x(d);
+          background.attr("visibility", "hidden");
+        })
+        .on("drag", function(d) {
+          dragging[d] = Math.min(width, Math.max(0, d3.event.x));
+          foreground.attr("d", path);
+          dimensions.sort(function(a, b) { console.log(position(a)); return position(a) - position(b); });
+          console.log(dimensions);
+          x.domain(dimensions);
+          dimension=dimensions;
+		      partionDraw();
+          g.attr("transform", function(d) { return "translate(" + position(d) + ")"; })
+        })
+        .on("dragend", function(d) {
+          delete dragging[d];
+          transition(d3.select(this)).attr("transform", "translate(" + x(d) + ")");
+          transition(foreground).attr("d", path);
+          background
+            .attr("d", path)
+          .transition()
+            .delay(500)
+            .duration(0)
+            .attr("visibility", null);
+        }));
+      // Add an axis and title.
+      g.append("g")
+        .attr("class", "axis")
+        .each(function(d) { d3.select(this).call(axis.scale(y[d]).tickValues(y[d].domain()).orient("right")); })
+      .append("text")
+        .style("text-anchor", "middle")
+        .attr("y", -9)
+        .style("font-size", "13px")
+        .text(function(d,i) { return d; });
+
+      // Add and store a brush for each axis.
+      g.append("g")
+        .attr("class", "brush")
+        .each(function(d) {
+        d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brushstart", brushstart).on("brush", brush));
+        })
+      .selectAll("rect")
+        .attr("x", -8)
+        .attr("width", 16);
+        return val;
+  }
+  //按第三种方式排序
+  function orderByCluster(){
+    // Extract the list of dimensions and create a scale for each.
+      x.domain(dimensions = d3.keys(cars[0]).filter(function(d) {
+      return d != "name" && (y[d] = d3.scale.linear()
+        .domain(d3.extent(cars, function(p) { return +p[d]; }))
+        .range([height, 0]));
+      }));
+      
+	                 var node=[];
+			              for(var i=0;i<dime.length;i++){
+			              	if(dime[i]=="CO")
+			              		node[i]=getNode(year,percent7);
+			              	if(dime[i]=="O3")
+			              		node[i]=getNode(mph,percent6);
+			              	if(dime[i]=="NO2")
+			              		node[i]=getNode(weight,percent5);
+			              	if(dime[i]=="SO2")
+			              		node[i]=getNode(power,percent4);
+			              	if(dime[i]=="PM10")
+			              		node[i]=getNode(displace,percent3);
+			              	if(dime[i]=="PM25")
+			              		node[i]=getNode(cylinders,percent2);
+			              	if(dime[i]=="AQI")
+			              		node[i]=getNode(economy,percent1);
+			              }
+			              console.log(node);
+			              var clusterArr=getClusterCorrelation(cars,node);
+			              console.log(clusterArr);
+			              var labels=new Array(7);
+						    /*for(var i=0;i<7;i++)
+						    {
+						        labels[i]=''+i+'';
+						    }*/
+                labels=dime;
+			              var positions = numeric.transpose(mds.classic(clusterArr))
+						
+						var xDomain = [Math.min.apply(null, positions[0]),
+                       					Math.max.apply(null, positions[0])],
+            			 yDomain = [Math.max.apply(null, positions[1]),
+                       					Math.min.apply(null, positions[1])];
+                       		var xScale = d3.scale.linear().
+					                domain(xDomain)
+					                .range([32, 370 - 32]),
+					            yScale = d3.scale.linear().
+					                domain(yDomain)
+					                .range([32, 330-32]);
+
+			              	for(var i=0;i<7;i++){
+			              		for(var j=0;j<7;j++){
+			              			if(i==j)
+			              				arrMDS_cluster[i][j]=0;
+			              			else
+			              				arrMDS_cluster[i][j]=Math.sqrt(Math.pow(xScale(positions[0][i])-xScale(positions[0][j]),2)+Math.pow(yScale(positions[1][i])-yScale(positions[1][j]),2));
+			              		}
+			              	}
+			              	
+			              	var val=getMDSPath(arrMDS_cluster);
+                      //sliderposition(val);
+			              	for(var i=0;i<7;i++)
+			              		dimensions[i]=dime[val[i]];
+			              	console.log(val);
+			              	x.domain(dimensions);
+			       			dimension=dimensions;
+						    var w = Math.min(700, document.documentElement.clientWidth - 20),
+						        h = w /2;
+
+						    mds.drawD3ScatterPlot(d3.select("svg"),
+						        positions[0],
+						        positions[1],
+						        labels,
+						        {
+						            w :  Math.min(700, document.documentElement.clientWidth - 20),
+						            h : w /2,
+						            padding : 37,
+						            reverseX : true,
+						            reverseY : true,
+						        },
+                    cars,
+                    val,
+                    dataLoad,
+                    miserables
+						    );
+
+
+      // Add grey background lines for context.
+      background = g1.append("g")
+        .attr("class", "background")
+      .selectAll("path")
+        .data(cars)
+      .enter().append("path")
+        .attr("d", path);
+
+      // Add blue foreground lines for focus.
+      foreground = g1.append("g")
+        .attr("class", "foreground")
+      .selectAll("path")
+        .data(cars)
+      .enter().append("path")
+        .attr("d", path);
+    console.log(dimensions);
+      // Add a group element for each dimension.
+      var g = g1.selectAll(".dimension")
+        .data(dimensions)
+      .enter().append("g")
+        .attr("class", "dimension")
+        .attr("stroke-width",2)
+        .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+        .call(d3.behavior.drag()
+        .origin(function(d) { return {x: x(d)}; })
+        .on("dragstart", function(d) {
+          dragging[d] = x(d);
+          background.attr("visibility", "hidden");
+        })
+        .on("drag", function(d) {
+          dragging[d] = Math.min(width, Math.max(0, d3.event.x));
+          foreground.attr("d", path);
+          dimensions.sort(function(a, b) { console.log(position(a)); return position(a) - position(b); });
+          console.log(dimensions);
+          x.domain(dimensions);
+          dimension=dimensions;
+			     partionDraw();
+          g.attr("transform", function(d) { return "translate(" + position(d) + ")"; })
+        })
+        .on("dragend", function(d) {
+          delete dragging[d];
+          transition(d3.select(this)).attr("transform", "translate(" + x(d) + ")");
+          transition(foreground).attr("d", path);
+          background
+            .attr("d", path)
+          .transition()
+            .delay(500)
+            .duration(0)
+            .attr("visibility", null);
+        }));
+
+      // Add an axis and title.
+      g.append("g")
+        .attr("class", "axis")
+        .each(function(d) { d3.select(this).call(axis.scale(y[d]).tickValues(y[d].domain()).orient("right")); })
+      .append("text")
+        .style("text-anchor", "middle")
+        .attr("y", -9)
+        .style("font-size", "13px")
+        .text(function(d,i) { return d; });
+
+      // Add and store a brush for each axis.
+      g.append("g")
+        .attr("class", "brush")
+        .each(function(d) {
+        d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brushstart", brushstart).on("brush", brush));
+        })
+      .selectAll("rect")
+        .attr("x", -8)
+        .attr("width", 16);
+        return val;
+  }
+  var order=orderByRandom();
+  CoOccurrence(arrMDS_cluster,order);
+
+
+  d3.selectAll("input")
+          .on("change",function(){
+            //var select=Type();
+            if(this.value=="name"){
+              d3.selectAll(".background").remove();
+              d3.selectAll(".foreground").remove();
+              d3.selectAll(".dimension").remove();
+              d3.selectAll(".column").remove();
+              d3.selectAll(".row").remove();
+              var order=orderByRandom();
+              CoOccurrence(arrMDS_cluster,order);
+              
+            }else if(this.value=="correlation"){
+              select_type="correlation";
+              d3.selectAll(".background").remove();
+              d3.selectAll(".foreground").remove();
+              d3.selectAll(".dimension").remove();
+
+              d3.selectAll(".column").remove();
+              d3.selectAll(".row").remove();
+
+              var order_relation=orderByCorrection();
+
+
+              partionDraw();
+              CoOccurrence(arrMDS_relation,order_relation);
+              //alert("correlation");
+            }else if(this.value=="Cluster"){
+            	select_type="Cluster";
+            d3.selectAll("class", ".axis")
+              d3.selectAll(".background").remove();
+              d3.selectAll(".foreground").remove();
+              d3.selectAll(".dimension").remove();
+              d3.selectAll(".column").remove();
+              d3.selectAll(".row").remove();
+              var order_cluster=orderByCluster();
+              
+              partionDraw();
+              CoOccurrence(arrMDS_cluster,order_cluster);
+              //alert("Cluster");
+            }
+          });
+
+}
+
+
+
+function position(d) {
+  var v = dragging[d];
+  return v == null ? x(d) : v;
+}
+
+function transition(g) {
+  return g.transition().duration(500);
+}
+
+// Returns the path for a given data point.
+function path(d) {
+  return line(dimensions.map(function(p) { return [position(p), y[p](d[p])]; }));
+}
+
+function brushstart() {
+  d3.event.sourceEvent.stopPropagation();
+}
+
+// Handles a brush event, toggling the display of foreground lines.
+function brush() {
+  var actives = dimensions.filter(function(p,i) { return !y[p].brush.empty(); }),
+      extents = actives.map(function(p) { return y[p].brush.extent(); });
+  foreground.style("display", function(d) {
+    return actives.every(function(p, i) {
+      return extents[i][0] <= d[p] && d[p] <= extents[i][1];
+    }) ? null : "none";
+  });
+}
+
+function caculate(cars){
+  
+  console.log(cars);
+
+
+  for(var j=0;j<7;j++){
+    sum=0;
+    NAN=0;
+    for(var i=0;i<cars.length;i++){
+      if(cars[i][dime[j]]==""){
+        NAN++;
+        continue;
+      }
+      sum=sum+parseFloat(cars[i][dime[j]]);
+    }
+    mean[dime[j]]=sum/(cars.length-NAN);
+  }
+  
+  for(var j=0;j<7;j++){
+    sum=0;
+    NAN=0;
+    for(var i=0;i<cars.length;i++){
+      if(cars[i][dime[j]]==""){
+        NAN++;
+        continue;
+      }
+      sum=sum+Math.pow(parseFloat(cars[i][dime[j]])-mean[dime[j]],2);
+    }
+    standard[dime[j]]=Math.sqrt(sum/(cars.length-NAN));
+  }
+
+  for(var i=0;i<7;i++){
+    for(var j=0;j<7;j++){
+      NAN=0;
+      sum=0;
+      for(var k=0;k<cars.length;k++){
+        if(cars[i][dime[j]]==""){
+          NAN++;
+          continue;
+        }
+        sum=sum+((cars[k][dime[i]]-mean[dime[i]])/standard[dime[i]])*((cars[k][dime[j]]-mean[dime[j]])/standard[dime[j]]);
+      }
+      arr[i][j]=sum/(cars.length-NAN);
+    }
+  }
+  
+  flag=new Array();
+ vis=new Array();
+ v=new Array();
+
+  ans=100000;
+  flag[3]=1;
+  dfs(3,0,0);
+  console.log(v);
+  //dimensions.sort(function(a,b){return mean[a]-mean[b]; });
+  for(var i=0;i<7;i++){
+    dimensions[i]=dime[v[i]];
+  }
+  x.domain(dimensions);
+  console.log(dimensions);
+  //return dime;
+}
+function dfs(x,len,dep){
+  vis[dep] = x;
+  if (dep == 6)
+  {
+    if (ans > len)
+    {
+      ans = len;
+      for (var i = 0; i < 7; i++)
+        v[i] = vis[i];
+    }//统计答案
+    return;
+  }
+  for (var i = 0; i < 7; i++)
+  {
+    if (flag[i]==1) continue; //走过不走
+    flag[i] = 1;
+    dfs(i, len + arr[x][i], dep + 1);
+    flag[i] = 0;
+  }
+}
+
+function getMDSPath(MDSarray){
+	var flag1=new Array();
+ 	var vis1=new Array();
+ 	var v1=new Array();
+
+  var ans1=100000;
+  for(var i=0;i<7;i++){
+    for(var j=0;j<7;j++){
+      flag1[j]=0;
+      vis1[j]=0;
+    }
+    flag1[i]=1;
+    dfs1(i,0,0);
+  }
+  return v1;
+
+  function dfs1(x,len,dep){
+  vis1[dep] = x;
+  if (dep == 6)
+  {
+    if (ans1 > len)
+    {
+      ans1 = len;
+      for (var i = 0; i < 7; i++)
+        v1[i] = vis1[i];
+    }//统计答案
+    return;
+  }
+  for (var i = 0; i < 7; i++)
+  {
+    if (flag1[i]==1) continue; //走过不走
+    flag1[i] = 1;
+    dfs1(i, len + MDSarray[x][i], dep + 1);
+    flag1[i] = 0;
+  }
+}
+}
+//获取单选
+function Type(){
+            var mySelect=document.selectform.value;
+            return mySelect;
+        }
+
+</script>

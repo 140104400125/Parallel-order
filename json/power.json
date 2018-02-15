@@ -1,0 +1,205 @@
+{
+"name":"1",
+"values":[2,26],
+"dis":190,
+"children":
+[
+	{ 
+	  "name":"2" , 
+	  "values":[2,12],
+	  "dis":105,
+  	  "children":
+  	  [
+	  	  	{
+				"name":"3",
+				"values":[2,12],
+				"dis":68,
+				"children":
+				[
+					{
+						"name":"3" ,
+						"values":[2,12],
+						"dis":49,
+						"children":
+						[
+							{
+								"name":"3" ,
+								"values":[2,7],
+								"dis":41,
+								"children":
+								[
+									{
+										"name":"3",
+										"values":[2,7],
+										"dis":38,
+										"children":
+										[
+											{
+												"name":"3",
+												"values":[2,4],
+												"dis":31
+											},
+											{
+												"name":"3",
+												"values":[5,7],
+												"dis":31
+											}
+										]
+									}
+								]
+							},
+							{
+								"name":"3" ,
+								"values":[8,12],
+								"dis":41,
+								"children":
+								[
+									{
+										"name":"3",
+										"values":[8,12],
+										"dis":38,
+										"children":
+										[
+											{
+												"name":"3",
+												"values":[8,12],
+												"dis":31	
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+  	  ] 
+  	},
+  	
+	{ 
+		"name":"3" ,
+		"values":[13,26],
+		"dis":105,
+		"children":
+		[
+			{
+				"name":"3" ,
+				"values":[13,16],
+				"dis":68,
+				"children":
+				[
+					{
+						"name":"3" ,
+						"values":[13,16],
+						"dis":49,
+						"children":
+						[
+							{
+								"name":"3" ,
+								"values":[13,16],
+								"dis":41,
+								"children":
+								[
+									{
+										"name":"3",
+										"values":[13,16],
+										"dis":38,
+										"children":
+										[
+											{
+												"name":"3",
+												"values":[13,16],
+												"dis":31	
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			},
+			{
+				"name":"3" ,
+				"values":[18,26],
+				"dis":68,
+				"children":
+				[
+					{
+						"name":"3" ,
+						"values":[18,24],
+						"dis":49,
+						"children":
+						[
+							{
+								"name":"3" ,
+								"values":[18,24],
+								"dis":41,
+								"children":
+								[
+									{
+										"name":"3",
+										"values":[18,20],
+										"dis":38,
+										"children":
+										[
+											{
+												"name":"3",
+												"values":[18,20],
+												"dis":31
+											}
+										]
+									},
+									{
+										"name":"3",
+										"values":[21,24],
+										"dis":38,
+										"children":
+										[
+											{
+												"name":"3",
+												"values":[21,24],
+												"dis":31	
+											}
+										]
+									}
+								]
+							}
+						]
+					},
+					{
+						"name":"3" ,
+						"values":[26,26],
+						"dis":49,
+						"children":
+						[
+							{
+								"name":"3" ,
+								"values":[26,26],
+								"dis":41,
+								"children":
+								[
+									{
+										"name":"3",
+										"values":[26,26],
+										"dis":38,
+										"children":
+										[
+											{
+												"name":"3",
+												"values":[26,26],
+												"dis":31	
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+	
+]
+}
